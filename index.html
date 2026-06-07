@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MDAPL Team MIS Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{color-scheme:light;--sec:#6c757d;--neg:#dc3545;--pos:#28a745;--rad:10px;--gap:16px;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#eef0f5;color:#212529;line-height:1.5}
+.wrap{max-width:1400px;margin:0 auto;padding:var(--gap)}
+header.top{background:linear-gradient(135deg,#1a1a2e,#2d2d54);color:#fff;padding:22px 26px;border-radius:var(--rad);margin-bottom:var(--gap)}
+header.top h1{font-size:21px;font-weight:700}
+header.top p{font-size:13px;opacity:.75;margin-top:4px}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;background:#fff;padding:16px 20px;border-radius:var(--rad);margin-bottom:var(--gap);box-shadow:0 1px 4px rgba(0,0,0,.07);align-items:start}
+.fg{display:flex;flex-direction:column;gap:5px;position:relative}
+.fg label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--sec)}
+.fg select{padding:9px 11px;border:1px solid #d4d8e0;border-radius:7px;background:#fff;font-size:14px;color:#212529}
+.fg select:disabled{background:#f1f2f5;color:#aaa}
+.ms-btn{padding:9px 11px;border:1px solid #d4d8e0;border-radius:7px;background:#fff;font-size:14px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px;min-height:38px}
+.ms-btn .cnt{background:#4C72B0;color:#fff;border-radius:12px;font-size:11px;padding:1px 8px}
+.ms-panel{display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:#fff;border:1px solid #d4d8e0;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.15);margin-top:4px;max-height:300px;overflow:auto;padding:6px}
+.ms-panel.open{display:block}
+.ms-panel .row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px}
+.ms-panel .row:hover{background:#f2f4f8}
+.ms-tools{display:flex;gap:8px;padding:4px 8px 8px;border-bottom:1px solid #eef0f5;margin-bottom:4px}
+.ms-tools button{flex:1;font-size:12px;padding:5px;border:1px solid #d4d8e0;background:#f8f9fb;border-radius:6px;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--gap);margin-bottom:var(--gap)}
+.kpi{background:#fff;border-radius:var(--rad);padding:18px 22px;box-shadow:0 1px 4px rgba(0,0,0,.07);border-left:4px solid #4C72B0}
+.kpi .l{font-size:12px;color:var(--sec);text-transform:uppercase;letter-spacing:.5px}
+.kpi .v{font-size:28px;font-weight:800;margin-top:6px}
+.kpi .s{font-size:12px;color:var(--sec);margin-top:3px}
+.charts{display:grid;grid-template-columns:2fr 1fr;gap:var(--gap);margin-bottom:var(--gap)}
+.charts .full{grid-column:1/-1}
+.card{background:#fff;border-radius:var(--rad);padding:18px 22px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.card h3{font-size:14px;font-weight:700;margin-bottom:14px}
+.chartbox{position:relative;height:320px}
+.tablecard{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 11px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+thead th{border-bottom:2px solid #e2e5ec;color:var(--sec);font-size:11px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;user-select:none;position:sticky;top:0;background:#fff}
+tbody tr:hover{background:#f6f7fb}
+tbody td{border-bottom:1px solid #f0f1f5}
+.neg{color:var(--neg);font-weight:600}.zero{color:var(--pos);font-weight:600}.muted{color:#c0c4cc}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;background:#eef0f5;color:var(--sec)}
+footer{font-size:12px;color:var(--sec);text-align:center;padding:14px}
+.note{font-size:12px;color:var(--sec);background:#fff8e6;border:1px solid #ffe7a3;padding:10px 14px;border-radius:8px;margin-bottom:var(--gap)}
+@media(max-width:860px){.charts{grid-template-columns:1fr}}
+</style></head>
+<body><div class="wrap">
+<header class="top">
+<h1>MDAPL &mdash; Team Performance Dashboard</h1>
+<p>Source: FINAL MIS CREATION 2025 & 2026 &middot; Metric: average Actual Score % per KPI &middot; 0% = on target, more negative = more penalties</p>
+</header>
+<div class="note">Scores are <b>penalty percentages</b>. <b>Higher (closer to 0) is better.</b> Tick multiple <b>Team Members</b> to compare them, and multiple <b>Months</b> to focus a period. Pick exactly one month to drill into weeks.</div>
+
+<div class="filters">
+<div class="fg"><label>Year</label><select id="fYear"><option value="2025">2025</option><option value="2026">2026</option></select></div>
+<div class="fg"><label>Team Members</label>
+  <div class="ms-btn" id="memBtn"><span id="memLabel">All Members</span><span class="cnt" id="memCnt" style="display:none">0</span></div>
+  <div class="ms-panel" id="memPanel">
+    <div class="ms-tools"><button type="button" id="memAll">Select all</button><button type="button" id="memNone">Clear</button></div>
+    <div id="memList"></div>
+  </div>
+</div>
+<div class="fg"><label>Role</label><select id="fRole"></select></div>
+<div class="fg"><label>Months</label>
+  <div class="ms-btn" id="moBtn"><span id="moLabel">Full Year</span><span class="cnt" id="moCnt" style="display:none">0</span></div>
+  <div class="ms-panel" id="moPanel">
+    <div class="ms-tools"><button type="button" id="moAll">Select all</button><button type="button" id="moNone">Clear</button></div>
+    <div id="moList"></div>
+  </div>
+</div>
+<div class="fg"><label>Week (single month only)</label><select id="fWeek"></select></div>
+<div class="fg"><label>Rank / Sort</label><select id="fSort">
+<option value="best">Best &rarr; Worst</option><option value="worst">Worst &rarr; Best</option>
+<option value="alpha">Name A&rarr;Z</option></select></div>
+</div>
+
+<div class="kpis" id="kpis"></div>
+<div class="charts">
+<div class="card"><h3 id="trendTitle">Trend</h3><div class="chartbox"><canvas id="trend"></canvas></div></div>
+<div class="card"><h3>Team Ranking (Yearly Avg)</h3><div class="chartbox"><canvas id="rank"></canvas></div></div>
+<div class="card full"><h3 id="barTitle">Average Score by Member</h3><div class="chartbox" style="height:360px"><canvas id="bars"></canvas></div></div>
+</div>
+<div class="card tablecard"><h3 id="tblTitle">Detail Table</h3><table id="tbl"><thead></thead><tbody></tbody></table></div>
+<footer>Generated <span id="gen"></span> &middot; MDAPL MIS</footer>
+</div>
+<script>
+const ALL={"years": {"2025": {"months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], "members": [{"name": "ROHAN TIWARI", "role": "ARCHITECT", "yearly": -11.15, "monthly": {"Jan": null, "Feb": null, "Mar": null, "Apr": null, "May": null, "Jun": -13.87, "Jul": -9.59, "Aug": null, "Sep": null, "Oct": null, "Nov": -5.74, "Dec": -15.39}, "weekly": {"Jan": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Feb": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Mar": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Apr": {"1": null, "2": null, "3": null, "4": null, "5": null}, "May": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Jun": {"1": null, "2": -2.05, "3": -9.53, "4": -30.46, "5": null}, "Jul": {"1": -9.59, "2": null, "3": null, "4": null, "5": null}, "Aug": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Sep": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Oct": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Nov": {"1": null, "2": -2.59, "3": -5.73, "4": -8.89, "5": null}, "Dec": {"1": -10.7, "2": -17.03, "3": -10.95, "4": -22.89, "5": null}}}, {"name": "ARBAZ AHMED", "role": "CIVIL ENGINEER", "yearly": -21.35, "monthly": {"Jan": -52.29, "Feb": null, "Mar": null, "Apr": null, "May": -3.86, "Jun": null, "Jul": null, "Aug": null, "Sep": null, "Oct": null, "Nov": -7.39, "Dec": -21.86}, "weekly": {"Jan": {"1": -32.35, "2": -62.26, "3": -62.26, "4": null, "5": null}, "Feb": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Mar": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Apr": {"1": null, "2": null, "3": null, "4": null, "5": null}, "May": {"1": null, "2": -3.86, "3": null, "4": null, "5": null}, "Jun": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Jul": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Aug": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Sep": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Oct": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Nov": {"1": null, "2": -2.92, "3": -7.14, "4": -12.11, "5": null}, "Dec": {"1": -16.27, "2": -21.35, "3": -16.68, "4": -25.08, "5": -29.92}}}, {"name": "NISHA SHARMA", "role": "COLLECTION COORDINATOR", "yearly": -26.62, "monthly": {"Jan": -36.2, "Feb": -63.93, "Mar": -34.09, "Apr": -31.66, "May": -36.14, "Jun": -24.56, "Jul": -5.69, "Aug": -12.78, "Sep": -36.74, "Oct": -7.74, "Nov": -18.48, "Dec": -11.45}, "weekly": {"Jan": {"1": -47.6, "2": -40.99, "3": -20.97, "4": -35.04, "5": null}, "Feb": {"1": -41.21, "2": -61.53, "3": -27.73, "4": -125.25, "5": null}, "Mar": {"1": -3.9, "2": -49.78, "3": -52.58, "4": -30.09, "5": null}, "Apr": {"1": -32.04, "2": -9.96, "3": -28.1, "4": -43.88, "5": -41.93}, "May": {"1": -52.78, "2": -38.84, "3": -33.4, "4": -19.53, "5": null}, "Jun": {"1": -8.43, "2": -8.02, "3": -80.17, "4": -1.22, "5": null}, "Jul": {"1": -11.79, "2": -1.22, "3": -2.44, "4": -1.22, "5": -11.79}, "Aug": {"1": -1.22, "2": -6.88, "3": -1.59, "4": -41.43, "5": null}, "Sep": {"1": -32.93, "2": -22.16, "3": -37.79, "4": -54.09, "5": null}, "Oct": {"1": -1.22, "2": -1.22, "3": -1.22, "4": -33.82, "5": -1.22}, "Nov": {"1": -1.22, "2": -4.71, "3": -17.96, "4": -49.41, "5": null}, "Dec": {"1": -8.26, "2": -33.54, "3": -7.18, "4": -3.55, "5": -4.39}}}, {"name": "RASHMI", "role": "ALL FOLLOWUP/CLIENT SERVICE EXEC", "yearly": -34.06, "monthly": {"Jan": -25.95, "Feb": -49.38, "Mar": -42.11, "Apr": -47.43, "May": -32.12, "Jun": -30.43, "Jul": -26.38, "Aug": -30.01, "Sep": -63.94, "Oct": -23.66, "Nov": -17.91, "Dec": -19.36}, "weekly": {"Jan": {"1": -11.81, "2": -18.26, "3": -11.81, "4": -62.82, "5": null}, "Feb": {"1": -82.95, "2": -38.29, "3": -42.56, "4": -33.71, "5": null}, "Mar": {"1": -21.53, "2": -35.07, "3": -66.17, "4": -46.21, "5": null}, "Apr": {"1": -33.95, "2": -45.12, "3": -53.37, "4": -69.0, "5": -35.36}, "May": {"1": -36.51, "2": -41.74, "3": -42.3, "4": -7.95, "5": null}, "Jun": {"1": -52.42, "2": -10.08, "3": -39.83, "4": -19.4, "5": null}, "Jul": {"1": -32.74, "2": -16.25, "3": -30.87, "4": -1.3, "5": -50.74}, "Aug": {"1": -12.67, "2": -38.53, "3": -40.85, "4": -28.0, "5": null}, "Sep": {"1": -46.24, "2": -4.82, "3": -119.06, "4": -85.65, "5": null}, "Oct": {"1": -8.57, "2": -39.54, "3": -18.12, "4": -33.96, "5": -18.12}, "Nov": {"1": -18.12, "2": -16.74, "3": -31.86, "4": -4.9, "5": null}, "Dec": {"1": -8.19, "2": -46.78, "3": -9.46, "4": -14.78, "5": -16.82}}}, {"name": "SURAJ VERMA", "role": "ARCHITECT", "yearly": -39.86, "monthly": {"Jan": -27.04, "Feb": -52.64, "Mar": -77.32, "Apr": -51.75, "May": -51.62, "Jun": -47.22, "Jul": null, "Aug": -3.05, "Sep": -15.66, "Oct": -29.58, "Nov": -40.18, "Dec": -42.45}, "weekly": {"Jan": {"1": -23.97, "2": -14.49, "3": -27.76, "4": -41.95, "5": null}, "Feb": {"1": -46.62, "2": -39.62, "3": -55.84, "4": -68.46, "5": null}, "Mar": {"1": -53.22, "2": -60.19, "3": -75.94, "4": -119.92, "5": null}, "Apr": {"1": -69.51, "2": -48.09, "3": -57.37, "4": -48.71, "5": -35.53}, "May": {"1": -64.58, "2": -47.14, "3": -57.5, "4": -37.28, "5": null}, "Jun": {"1": -42.32, "2": -52.11, "3": null, "4": null, "5": null}, "Jul": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Aug": {"1": null, "2": null, "3": null, "4": -3.05, "5": null}, "Sep": {"1": -8.3, "2": -11.32, "3": -22.19, "4": -20.84, "5": null}, "Oct": {"1": -24.43, "2": -28.68, "3": -24.19, "4": -42.73, "5": -27.86}, "Nov": {"1": -35.08, "2": -38.14, "3": -41.73, "4": -45.78, "5": null}, "Dec": {"1": -36.16, "2": -41.57, "3": -35.08, "4": -55.35, "5": -44.08}}}, {"name": "MONIKA TYAGI", "role": "EXECUTIVE ASSISTANT", "yearly": -64.14, "monthly": {"Jan": -48.56, "Feb": -67.14, "Mar": -85.51, "Apr": -54.78, "May": -57.98, "Jun": -56.74, "Jul": -24.65, "Aug": -62.9, "Sep": -71.97, "Oct": -43.59, "Nov": -128.62, "Dec": -67.18}, "weekly": {"Jan": {"1": -46.91, "2": -49.92, "3": -39.71, "4": -57.7, "5": null}, "Feb": {"1": -60.71, "2": -60.71, "3": -75.58, "4": -71.57, "5": null}, "Mar": {"1": -81.5, "2": -91.64, "3": -94.12, "4": -74.8, "5": null}, "Apr": {"1": -57.55, "2": -45.11, "3": -48.85, "4": -60.14, "5": -62.02}, "May": {"1": -32.62, "2": -48.09, "3": -56.76, "4": -94.78, "5": null}, "Jun": {"1": -62.47, "2": -49.71, "3": -29.24, "4": -84.79, "5": null}, "Jul": {"1": -55.1, "2": -3.77, "3": -4.58, "4": -30.33, "5": -29.47}, "Aug": {"1": -11.97, "2": -105.48, "3": -110.28, "4": -23.75, "5": null}, "Sep": {"1": -6.08, "2": -7.08, "3": -110.91, "4": -163.83, "5": null}, "Oct": {"1": -138.72, "2": -44.08, "3": -15.65, "4": -11.28, "5": -8.22}, "Nov": {"1": -81.4, "2": -175.75, "3": -162.26, "4": -95.05, "5": null}, "Dec": {"1": -49.74, "2": -57.17, "3": -93.0, "4": -47.11, "5": -88.89}}}, {"name": "OM PRAKASH YADAV", "role": "DRAFTSMAN", "yearly": -90.91, "monthly": {"Jan": -31.64, "Feb": -18.57, "Mar": -24.06, "Apr": -55.45, "May": -38.42, "Jun": -32.9, "Jul": null, "Aug": -9.05, "Sep": -358.59, "Oct": -249.49, "Nov": null, "Dec": null}, "weekly": {"Jan": {"1": -10.34, "2": -8.06, "3": -97.06, "4": -11.11, "5": null}, "Feb": {"1": -17.38, "2": -17.61, "3": -17.36, "4": -21.92, "5": null}, "Mar": {"1": -17.17, "2": -21.46, "3": -28.95, "4": -28.65, "5": null}, "Apr": {"1": -30.96, "2": -19.82, "3": -22.9, "4": -184.04, "5": -19.87}, "May": {"1": -38.84, "2": -41.77, "3": -38.21, "4": -34.87, "5": null}, "Jun": {"1": -28.87, "2": -36.94, "3": null, "4": null, "5": null}, "Jul": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Aug": {"1": -2.7, "2": -12.54, "3": -8.26, "4": -12.63, "5": null}, "Sep": {"1": -469.61, "2": -917.89, "3": -18.42, "4": -28.42, "5": null}, "Oct": {"1": -24.05, "2": -482.79, "3": -469.11, "4": -22.03, "5": null}, "Nov": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Dec": {"1": null, "2": null, "3": null, "4": null, "5": null}}}, {"name": "VASU VARDHEN VIJ", "role": "ARCHITECT", "yearly": -99.51, "monthly": {"Jan": -23.51, "Feb": -23.98, "Mar": -34.61, "Apr": -90.71, "May": -420.17, "Jun": -285.4, "Jul": -83.58, "Aug": -3.32, "Sep": null, "Oct": null, "Nov": -4.62, "Dec": -25.17}, "weekly": {"Jan": {"1": -28.98, "2": -18.34, "3": -18.48, "4": -28.24, "5": null}, "Feb": {"1": -22.06, "2": -20.09, "3": -25.0, "4": -28.78, "5": null}, "Mar": {"1": -39.96, "2": -32.31, "3": -21.72, "4": -44.46, "5": null}, "Apr": {"1": -29.9, "2": -30.51, "3": -27.55, "4": -345.98, "5": -20.44}, "May": {"1": -49.43, "2": -968.35, "3": -45.76, "4": -617.14, "5": null}, "Jun": {"1": -960.53, "2": -42.55, "3": -95.18, "4": -43.34, "5": null}, "Jul": {"1": -83.58, "2": null, "3": null, "4": null, "5": null}, "Aug": {"1": null, "2": null, "3": null, "4": -3.32, "5": null}, "Sep": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Oct": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Nov": {"1": null, "2": null, "3": -2.16, "4": -7.08, "5": null}, "Dec": {"1": -12.51, "2": -25.43, "3": -21.16, "4": -36.27, "5": -30.49}}}, {"name": "SONALI SINGH", "role": "INT. DESIGNER", "yearly": -134.43, "monthly": {"Jan": -22.72, "Feb": -23.18, "Mar": -27.99, "Apr": -50.12, "May": -211.07, "Jun": -345.36, "Jul": -41.3, "Aug": -57.69, "Sep": -55.41, "Oct": -341.77, "Nov": -35.74, "Dec": -400.82}, "weekly": {"Jan": {"1": -22.59, "2": -18.08, "3": -22.74, "4": -27.45, "5": null}, "Feb": {"1": -23.43, "2": -18.93, "3": -22.52, "4": -27.83, "5": null}, "Mar": {"1": -36.4, "2": -25.39, "3": -23.25, "4": -26.91, "5": null}, "Apr": {"1": -30.4, "2": -25.93, "3": -21.22, "4": -150.62, "5": -22.67}, "May": {"1": -380.0, "2": -40.61, "3": -49.49, "4": -374.18, "5": null}, "Jun": {"1": -691.49, "2": -597.48, "3": -45.79, "4": -52.26, "5": null}, "Jul": {"1": -48.37, "2": -40.13, "3": -31.42, "4": -58.71, "5": -27.64}, "Aug": {"1": -44.3, "2": -65.51, "3": -53.16, "4": -67.78, "5": null}, "Sep": {"1": -52.89, "2": -44.68, "3": -76.68, "4": -47.41, "5": null}, "Oct": {"1": -31.65, "2": -76.24, "3": -583.43, "4": -982.54, "5": -35.0}, "Nov": {"1": -46.89, "2": -35.81, "3": -25.92, "4": -34.32, "5": null}, "Dec": {"1": -888.84, "2": -56.08, "3": -50.78, "4": -48.11, "5": -960.27}}}, {"name": "TAPAS KUMAR", "role": "ARCHITECT", "yearly": -146.78, "monthly": {"Jan": null, "Feb": null, "Mar": null, "Apr": null, "May": -1.81, "Jun": -15.24, "Jul": -19.65, "Aug": -17.38, "Sep": -16.85, "Oct": -338.15, "Nov": -56.0, "Dec": -709.2}, "weekly": {"Jan": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Feb": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Mar": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Apr": {"1": null, "2": null, "3": null, "4": null, "5": null}, "May": {"1": null, "2": null, "3": 0.0, "4": -3.62, "5": null}, "Jun": {"1": -32.48, "2": -8.18, "3": -10.4, "4": -9.9, "5": null}, "Jul": {"1": -13.9, "2": -12.0, "3": -15.0, "4": -37.1, "5": -20.25}, "Aug": {"1": -13.35, "2": -22.4, "3": -18.85, "4": -14.9, "5": null}, "Sep": {"1": -11.0, "2": -17.88, "3": -16.4, "4": -22.12, "5": null}, "Oct": {"1": -16.4, "2": -22.52, "3": -34.77, "4": -481.6, "5": -1135.45}, "Nov": {"1": -67.65, "2": -44.8, "3": -57.67, "4": -53.88, "5": null}, "Dec": {"1": -382.68, "2": -758.48, "3": -59.2, "4": -980.88, "5": -1364.78}}}, {"name": "JAI KRISHAN PANDEY", "role": "INTERIOR DESIGNER", "yearly": -173.39, "monthly": {"Jan": null, "Feb": null, "Mar": null, "Apr": null, "May": null, "Jun": null, "Jul": -8.21, "Aug": -18.29, "Sep": -15.59, "Oct": -272.19, "Nov": -228.82, "Dec": -497.22}, "weekly": {"Jan": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Feb": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Mar": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Apr": {"1": null, "2": null, "3": null, "4": null, "5": null}, "May": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Jun": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Jul": {"1": null, "2": -5.71, "3": -8.79, "4": -9.0, "5": -9.34}, "Aug": {"1": -10.58, "2": -14.21, "3": -9.37, "4": -39.0, "5": null}, "Sep": {"1": -10.5, "2": -16.37, "3": -19.08, "4": -16.42, "5": null}, "Oct": {"1": -18.5, "2": -32.95, "3": -533.0, "4": -745.26, "5": -31.26}, "Nov": {"1": -745.32, "2": -46.18, "3": -56.71, "4": -67.05, "5": null}, "Dec": {"1": -726.21, "2": -950.37, "3": -53.55, "4": -61.66, "5": -694.29}}}, {"name": "BHUVI KHATRI", "role": "ARCHITECT", "yearly": -191.81, "monthly": {"Jan": null, "Feb": null, "Mar": null, "Apr": null, "May": null, "Jun": null, "Jul": -14.24, "Aug": -15.73, "Sep": -17.29, "Oct": -237.6, "Nov": -197.66, "Dec": -668.33}, "weekly": {"Jan": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Feb": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Mar": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Apr": {"1": null, "2": null, "3": null, "4": null, "5": null}, "May": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Jun": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Jul": {"1": null, "2": -5.45, "3": -8.97, "4": -33.11, "5": -9.42}, "Aug": {"1": -8.11, "2": -15.08, "3": -19.87, "4": -19.87, "5": null}, "Sep": {"1": -14.92, "2": -17.5, "3": -19.11, "4": -17.63, "5": null}, "Oct": {"1": -19.76, "2": -23.55, "3": -28.63, "4": -486.87, "5": -629.18}, "Nov": {"1": -52.79, "2": -46.45, "3": -70.39, "4": -621.0, "5": null}, "Dec": {"1": -2052.16, "2": -1109.55, "3": -61.55, "4": -56.61, "5": -61.79}}}, {"name": "ABDUL QAYYUM", "role": "SR.  ARCHITECT", "yearly": -204.05, "monthly": {"Jan": -117.46, "Feb": -110.15, "Mar": -105.61, "Apr": -127.2, "May": -336.44, "Jun": -220.73, "Jul": -77.14, "Aug": -53.07, "Sep": -283.76, "Oct": -597.59, "Nov": -46.53, "Dec": -372.92}, "weekly": {"Jan": {"1": -142.52, "2": -113.35, "3": -107.1, "4": -106.85, "5": null}, "Feb": {"1": -92.71, "2": -111.44, "3": -114.75, "4": -121.69, "5": null}, "Mar": {"1": -88.16, "2": -135.5, "3": -73.32, "4": -125.44, "5": null}, "Apr": {"1": -166.3, "2": -86.36, "3": -119.78, "4": -175.8, "5": -87.78}, "May": {"1": -98.6, "2": -653.56, "3": -100.52, "4": -493.08, "5": null}, "Jun": {"1": -536.84, "2": -98.16, "3": -144.88, "4": -103.04, "5": null}, "Jul": {"1": -120.61, "2": -110.06, "3": -28.16, "4": -37.39, "5": -89.47}, "Aug": {"1": -64.67, "2": -43.94, "3": -31.47, "4": -72.22, "5": null}, "Sep": {"1": -71.2, "2": -38.45, "3": -137.06, "4": -888.35, "5": null}, "Oct": {"1": -49.78, "2": -871.43, "3": -969.16, "4": -1054.9, "5": -42.69}, "Nov": {"1": -43.47, "2": -26.43, "3": -46.04, "4": -70.18, "5": null}, "Dec": {"1": -57.78, "2": -466.71, "3": -53.8, "4": -540.43, "5": -745.88}}}, {"name": "KHUSHAL SINGH", "role": "SR. INTERIOR DESIGNER", "yearly": -224.71, "monthly": {"Jan": -89.0, "Feb": -73.9, "Mar": -85.75, "Apr": -243.17, "May": -320.85, "Jun": -255.76, "Jul": -64.81, "Aug": -270.27, "Sep": -78.93, "Oct": -416.45, "Nov": -283.16, "Dec": -514.41}, "weekly": {"Jan": {"1": -81.08, "2": -105.9, "3": -93.05, "4": -75.97, "5": null}, "Feb": {"1": -80.16, "2": -81.03, "3": -62.61, "4": -71.82, "5": null}, "Mar": {"1": -58.21, "2": -67.89, "3": -48.58, "4": -168.32, "5": null}, "Apr": {"1": -77.18, "2": -69.39, "3": -55.58, "4": -963.47, "5": -55.15}, "May": {"1": -83.79, "2": -560.44, "3": -127.38, "4": -511.79, "5": null}, "Jun": {"1": -670.05, "2": -86.7, "3": -169.75, "4": -96.53, "5": null}, "Jul": {"1": -116.25, "2": -55.3, "3": -50.2, "4": -56.4, "5": -45.92}, "Aug": {"1": -35.77, "2": -53.1, "3": -895.98, "4": -96.25, "5": null}, "Sep": {"1": -41.85, "2": -35.77, "3": -122.4, "4": -115.7, "5": null}, "Oct": {"1": -51.02, "2": -1069.05, "3": -421.85, "4": -483.35, "5": -57.0}, "Nov": {"1": -926.77, "2": -57.27, "3": -75.78, "4": -72.8, "5": null}, "Dec": {"1": -361.95, "2": -731.17, "3": -86.35, "4": -606.8, "5": -785.8}}}, {"name": "RUMAN GODARA", "role": "INTERIOR DESIGNER", "yearly": -231.29, "monthly": {"Jan": null, "Feb": null, "Mar": null, "Apr": null, "May": null, "Jun": null, "Jul": -17.14, "Aug": -27.09, "Sep": -36.0, "Oct": -304.38, "Nov": -42.85, "Dec": -960.27}, "weekly": {"Jan": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Feb": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Mar": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Apr": {"1": null, "2": null, "3": null, "4": null, "5": null}, "May": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Jun": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Jul": {"1": null, "2": -10.34, "3": -15.16, "4": -16.05, "5": -27.0}, "Aug": {"1": -17.18, "2": -33.87, "3": -26.68, "4": -30.63, "5": null}, "Sep": {"1": -22.58, "2": -27.76, "3": -56.05, "4": -37.61, "5": null}, "Oct": {"1": -40.24, "2": -78.76, "3": -632.47, "4": -728.34, "5": -35.0}, "Nov": {"1": -58.74, "2": -26.54, "3": null, "4": null, "5": null}, "Dec": {"1": null, "2": null, "3": null, "4": null, "5": -960.27}}}], "teamMonthlyAvg": {"Jan": -47.44, "Feb": -53.65, "Mar": -57.45, "Apr": -83.59, "May": -137.32, "Jun": -120.75, "Jul": -32.7, "Aug": -44.66, "Sep": -87.56, "Oct": -238.52, "Nov": -79.55, "Dec": -309.0}}, "2026": {"months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"], "members": [{"name": "MADHURI SAHA", "role": "ARCHITECT", "yearly": -23.98, "monthly": {"Jan": null, "Feb": null, "Mar": null, "Apr": null, "May": -32.31, "Jun": -15.64}, "weekly": {"Jan": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Feb": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Mar": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Apr": {"1": null, "2": null, "3": null, "4": null, "5": null}, "May": {"1": null, "2": null, "3": null, "4": -32.31, "5": null}, "Jun": {"1": -15.64, "2": null, "3": null, "4": null, "5": null}}}, {"name": "NISHA SHARMA", "role": "COLLECTION COORDINATER", "yearly": -26.15, "monthly": {"Jan": -14.35, "Feb": -11.05, "Mar": -22.95, "Apr": -31.07, "May": -38.52, "Jun": -38.96}, "weekly": {"Jan": {"1": -5.89, "2": -16.92, "3": -20.39, "4": -14.22, "5": null}, "Feb": {"1": -7.45, "2": -11.05, "3": -11.92, "4": -13.77, "5": null}, "Mar": {"1": -20.32, "2": -25.65, "3": -17.03, "4": -32.67, "5": -19.09}, "Apr": {"1": -24.61, "2": -32.58, "3": -23.16, "4": -43.99, "5": null}, "May": {"1": -34.05, "2": -44.23, "3": -36.15, "4": -39.66, "5": null}, "Jun": {"1": -38.96, "2": null, "3": null, "4": null, "5": null}}}, {"name": "RASHMI", "role": "ALL FOLLOWUP/CLIENT SERVICE EXEC", "yearly": -66.16, "monthly": {"Jan": -67.46, "Feb": -66.15, "Mar": -64.9, "Apr": -68.49, "May": -83.63, "Jun": -46.31}, "weekly": {"Jan": {"1": -51.27, "2": -47.7, "3": -101.46, "4": -69.39, "5": null}, "Feb": {"1": -29.34, "2": -90.45, "3": -76.07, "4": -68.73, "5": null}, "Mar": {"1": -61.41, "2": -91.22, "3": -50.55, "4": -59.69, "5": -61.64}, "Apr": {"1": -27.01, "2": -78.82, "3": -80.92, "4": -87.22, "5": null}, "May": {"1": -114.72, "2": -101.61, "3": -48.64, "4": -67.76, "5": null}, "Jun": {"1": -46.31, "2": null, "3": null, "4": null, "5": null}}}, {"name": "MONIKA TYAGI", "role": "COLLECTION COORDINATOR", "yearly": -70.67, "monthly": {"Jan": -91.42, "Feb": -56.85, "Mar": -63.96, "Apr": -105.65, "May": -78.02, "Jun": -28.12}, "weekly": {"Jan": {"1": -37.78, "2": -237.24, "3": -24.82, "4": -65.84, "5": null}, "Feb": {"1": -28.55, "2": -71.82, "3": -65.79, "4": -61.25, "5": null}, "Mar": {"1": -62.94, "2": -22.96, "3": -59.21, "4": -18.9, "5": -155.78}, "Apr": {"1": -21.46, "2": -277.61, "3": -54.99, "4": -68.55, "5": null}, "May": {"1": -78.38, "2": -75.14, "3": -78.0, "4": -80.57, "5": null}, "Jun": {"1": -28.12, "2": null, "3": null, "4": null, "5": null}}}, {"name": "UDAY PRAKASH MISHRA", "role": "ARCHITECT", "yearly": -70.89, "monthly": {"Jan": null, "Feb": null, "Mar": null, "Apr": null, "May": -70.7, "Jun": -71.08}, "weekly": {"Jan": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Feb": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Mar": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Apr": {"1": null, "2": null, "3": null, "4": null, "5": null}, "May": {"1": -2.0, "2": -28.33, "3": -6.97, "4": -245.49, "5": null}, "Jun": {"1": -71.08, "2": null, "3": null, "4": null, "5": null}}}, {"name": "ANIRUDDH KR GUPTA", "role": "SR. INT. DESIGNER", "yearly": -243.22, "monthly": {"Jan": null, "Feb": -9.1, "Mar": -207.52, "Apr": -410.26, "May": -484.47, "Jun": -104.75}, "weekly": {"Jan": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Feb": {"1": null, "2": null, "3": -6.9, "4": -11.31, "5": null}, "Mar": {"1": -318.35, "2": -118.65, "3": -236.68, "4": -39.75, "5": -324.18}, "Apr": {"1": -584.9, "2": -493.07, "3": -352.9, "4": -210.18, "5": null}, "May": {"1": -127.85, "2": -590.08, "3": -489.23, "4": -730.73, "5": null}, "Jun": {"1": -104.75, "2": null, "3": null, "4": null, "5": null}}}, {"name": "ARBAZ AHMED", "role": "CIVIL ENGINEER", "yearly": -340.14, "monthly": {"Jan": -32.65, "Feb": -70.08, "Mar": -612.78, "Apr": -471.55, "May": -711.54, "Jun": -142.24}, "weekly": {"Jan": {"1": -23.13, "2": -29.23, "3": -39.05, "4": -39.18, "5": null}, "Feb": {"1": -50.23, "2": -114.64, "3": -50.38, "4": -65.05, "5": null}, "Mar": {"1": -1764.38, "2": -376.62, "3": -196.79, "4": -237.63, "5": -512.83}, "Apr": {"1": -365.93, "2": -331.83, "3": -508.83, "4": -679.61, "5": null}, "May": {"1": -54.61, "2": -743.78, "3": -919.41, "4": -1128.34, "5": null}, "Jun": {"1": -142.24, "2": null, "3": null, "4": null, "5": null}}}, {"name": "TAPAS KUMAR", "role": "ARCHITECT", "yearly": -343.29, "monthly": {"Jan": -251.14, "Feb": -326.42, "Mar": -543.06, "Apr": -316.82, "May": -540.77, "Jun": -81.5}, "weekly": {"Jan": {"1": -51.6, "2": -604.5, "3": -285.64, "4": -62.83, "5": null}, "Feb": {"1": -467.19, "2": -656.55, "3": -89.29, "4": -92.67, "5": null}, "Mar": {"1": -1083.81, "2": -352.93, "3": -331.38, "4": -59.69, "5": -887.48}, "Apr": {"1": -396.02, "2": -280.02, "3": -47.9, "4": -543.31, "5": null}, "May": {"1": -49.81, "2": -620.74, "3": -610.38, "4": -882.17, "5": null}, "Jun": {"1": -81.5, "2": null, "3": null, "4": null, "5": null}}}, {"name": "SURAJ VERMA", "role": "ARCHITECT", "yearly": -350.63, "monthly": {"Jan": -252.33, "Feb": -92.12, "Mar": -176.22, "Apr": -948.09, "May": -561.04, "Jun": -74.0}, "weekly": {"Jan": {"1": -46.51, "2": -625.56, "3": -269.67, "4": -67.56, "5": null}, "Feb": {"1": -148.28, "2": -86.79, "3": -42.77, "4": -90.62, "5": null}, "Mar": {"1": -70.97, "2": -196.67, "3": -46.69, "4": -53.95, "5": -512.82}, "Apr": {"1": -705.08, "2": -701.08, "3": -1027.23, "4": -1358.97, "5": null}, "May": {"1": -815.36, "2": -593.03, "3": -318.97, "4": -516.82, "5": null}, "Jun": {"1": -74.0, "2": null, "3": null, "4": null, "5": null}}}, {"name": "ABDUL QAYYUM", "role": "PROJECT HEAD", "yearly": -419.59, "monthly": {"Jan": -368.22, "Feb": -446.44, "Mar": -341.79, "Apr": -653.21, "May": -563.41, "Jun": -144.45}, "weekly": {"Jan": {"1": -484.98, "2": -550.75, "3": -347.98, "4": -89.15, "5": null}, "Feb": {"1": -567.15, "2": -692.81, "3": -90.87, "4": -434.94, "5": null}, "Mar": {"1": -526.79, "2": -199.68, "3": -80.47, "4": -68.7, "5": -833.3}, "Apr": {"1": -1056.75, "2": -477.7, "3": -541.04, "4": -537.36, "5": null}, "May": {"1": -428.47, "2": -506.0, "3": -568.49, "4": -750.66, "5": null}, "Jun": {"1": -144.45, "2": null, "3": null, "4": null, "5": null}}}, {"name": "JAI KRISHAN PANDEY", "role": "INTERIOR DESIGNER", "yearly": -541.48, "monthly": {"Jan": -273.11, "Feb": -352.39, "Mar": -998.95, "Apr": null, "May": null, "Jun": null}, "weekly": {"Jan": {"1": -125.83, "2": -700.38, "3": -165.82, "4": -100.4, "5": null}, "Feb": {"1": -234.95, "2": -513.45, "3": -308.77, "4": null, "5": null}, "Mar": {"1": null, "2": null, "3": null, "4": null, "5": -998.95}, "Apr": {"1": null, "2": null, "3": null, "4": null, "5": null}, "May": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Jun": {"1": null, "2": null, "3": null, "4": null, "5": null}}}, {"name": "SONALI", "role": "INT. DESIGNER", "yearly": -543.28, "monthly": {"Jan": -303.41, "Feb": -161.71, "Mar": -933.75, "Apr": -914.51, "May": -791.62, "Jun": -154.68}, "weekly": {"Jan": {"1": -64.62, "2": -635.15, "3": -469.77, "4": -44.1, "5": null}, "Feb": {"1": -185.72, "2": -347.67, "3": -47.54, "4": -65.9, "5": null}, "Mar": {"1": -800.52, "2": -1079.7, "3": -876.02, "4": -913.52, "5": -998.95}, "Apr": {"1": -898.73, "2": -804.98, "3": -998.45, "4": -955.9, "5": null}, "May": {"1": -633.48, "2": -804.65, "3": -653.27, "4": -1075.08, "5": null}, "Jun": {"1": -154.68, "2": null, "3": null, "4": null, "5": null}}}, {"name": "KHUSHAL SINGH", "role": "PROJECT SERVICE ANALYST", "yearly": -573.38, "monthly": {"Jan": -370.62, "Feb": -444.27, "Mar": -905.24, "Apr": null, "May": null, "Jun": null}, "weekly": {"Jan": {"1": -140.0, "2": -908.71, "3": -347.88, "4": -85.9, "5": null}, "Feb": {"1": -440.43, "2": -656.57, "3": -70.14, "4": -609.93, "5": null}, "Mar": {"1": -905.24, "2": null, "3": null, "4": null, "5": null}, "Apr": {"1": null, "2": null, "3": null, "4": null, "5": null}, "May": {"1": null, "2": null, "3": null, "4": null, "5": null}, "Jun": {"1": null, "2": null, "3": null, "4": null, "5": null}}}, {"name": "HARSHITA KUMAR", "role": "INTERN", "yearly": -594.17, "monthly": {"Jan": -38.23, "Feb": -165.35, "Mar": -382.67, "Apr": -1227.88, "May": -1156.72, "Jun": null}, "weekly": {"Jan": {"1": null, "2": -2.49, "3": -62.38, "4": -49.82, "5": null}, "Feb": {"1": -320.25, "2": -232.2, "3": -40.73, "4": -68.22, "5": null}, "Mar": {"1": -297.43, "2": -195.82, "3": -65.05, "4": -68.38, "5": -1286.67}, "Apr": {"1": -1483.67, "2": -888.58, "3": -1199.8, "4": -1339.47, "5": null}, "May": {"1": -971.17, "2": -1342.28, "3": null, "4": null, "5": null}, "Jun": {"1": null, "2": null, "3": null, "4": null, "5": null}}}, {"name": "BHUVI KHATRI", "role": "ARCHITECT", "yearly": -774.57, "monthly": {"Jan": -607.41, "Feb": -744.85, "Mar": -661.49, "Apr": -728.98, "May": -1130.11, "Jun": null}, "weekly": {"Jan": {"1": -219.8, "2": -1115.83, "3": -703.55, "4": -390.45, "5": null}, "Feb": {"1": -1255.62, "2": -982.0, "3": -611.75, "4": -130.03, "5": null}, "Mar": {"1": -423.77, "2": -527.95, "3": -617.3, "4": -739.48, "5": -998.95}, "Apr": {"1": -754.9, "2": -661.75, "3": -533.88, "4": -965.4, "5": null}, "May": {"1": -843.92, "2": -1116.83, "3": -1247.9, "4": -1311.8, "5": null}, "Jun": {"1": null, "2": null, "3": null, "4": null, "5": null}}}], "teamMonthlyAvg": {"Jan": -222.53, "Feb": -226.68, "Mar": -455.02, "Apr": -534.23, "May": -480.22, "Jun": -81.98}}}, "source": "FINAL MIS CREATION 2025 & 2026", "metric": "Average Actual Score % per KPI"};
+const WKS=['1','2','3','4','5'];
+const PAL=['#C44E52','#4C72B0','#55A868','#DD8452','#8172B3','#937860','#DA8BC3','#8C8C8C','#CCB974','#64B5CD','#E15759','#4E79A7'];
+const fmt=v=>v==null?'&mdash;':v.toFixed(1)+'%';
+const cls=v=>v==null?'muted':(v===0?'zero':'neg');
+const $=id=>document.getElementById(id);
+$('gen').textContent=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+let Y,M,MEM,TAVG,charts={},selMem=new Set(),selMo=new Set();
+function setYear(){const y=$('fYear').value;Y=ALL.years[y];M=Y.months;MEM=Y.members;TAVG=Y.teamMonthlyAvg;}
+
+// ---- generic multiselect ----
+function genericMS(panelId,listId,btnLabel,cntId,items,selSet,onChange){
+  const list=$(listId);list.innerHTML='';
+  items.forEach(it=>{
+    const row=document.createElement('label');row.className='row';
+    const cb=document.createElement('input');cb.type='checkbox';cb.value=it.val;cb.checked=selSet.has(it.val);
+    cb.addEventListener('change',()=>{cb.checked?selSet.add(it.val):selSet.delete(it.val);onChange();});
+    row.appendChild(cb);const sp=document.createElement('span');sp.textContent=it.txt;row.appendChild(sp);
+    list.appendChild(row);
+  });
+}
+function activeMembers(){const role=$('fRole').value;let l=MEM.filter(m=>role==='all'||m.role===role);if(selMem.size>0)l=l.filter(m=>selMem.has(m.name));return l;}
+function effMonths(){return selMo.size>0?M.filter(mo=>selMo.has(mo)):M.slice();}
+function singleMonth(){return selMo.size===1?[...selMo][0]:null;}
+
+function syncMemLabel(){[...selMem].forEach(n=>{if(!MEM.find(m=>m.name===n))selMem.delete(n);});
+  const n=selMem.size;$('memLabel').textContent=n===0?'All Members':(n===1?[...selMem][0]:n+' selected');
+  $('memCnt').style.display=n?'inline-block':'none';$('memCnt').textContent=n;}
+function syncMoLabel(){[...selMo].forEach(n=>{if(!M.includes(n))selMo.delete(n);});
+  const n=selMo.size;$('moLabel').textContent=n===0?'Full Year':(n===1?[...selMo][0]:n+' months');
+  $('moCnt').style.display=n?'inline-block':'none';$('moCnt').textContent=n;}
+
+function buildMemberMS(){genericMS('memPanel','memList','',null,
+  MEM.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(m=>({val:m.name,txt:m.name+'  ('+m.role+')'})),
+  selMem,()=>{syncMemLabel();render();});syncMemLabel();}
+function buildMonthMS(){genericMS('moPanel','moList','',null,
+  M.map(mo=>({val:mo,txt:mo})),selMo,()=>{syncMoLabel();render();});syncMoLabel();}
+
+// toggles
+$('memBtn').addEventListener('click',()=>$('memPanel').classList.toggle('open'));
+$('moBtn').addEventListener('click',()=>$('moPanel').classList.toggle('open'));
+document.addEventListener('click',e=>{if(!e.target.closest('.fg')){$('memPanel').classList.remove('open');$('moPanel').classList.remove('open');}});
+$('memAll').addEventListener('click',()=>{MEM.forEach(m=>selMem.add(m.name));buildMemberMS();render();});
+$('memNone').addEventListener('click',()=>{selMem.clear();buildMemberMS();render();});
+$('moAll').addEventListener('click',()=>{M.forEach(mo=>selMo.add(mo));buildMonthMS();render();});
+$('moNone').addEventListener('click',()=>{selMo.clear();buildMonthMS();render();});
+
+function rebuildFilters(){
+  const curRole=$('fRole').value;
+  $('fRole').innerHTML='';let o=document.createElement('option');o.value='all';o.textContent='All Roles';$('fRole').appendChild(o);
+  [...new Set(MEM.map(m=>m.role))].sort().forEach(r=>{let x=document.createElement('option');x.value=r;x.textContent=r;$('fRole').appendChild(x);});
+  if([...$('fRole').options].some(o=>o.value===curRole))$('fRole').value=curRole;
+  $('fWeek').innerHTML='';['all','1','2','3','4','5'].forEach(w=>{let x=document.createElement('option');x.value=w;x.textContent=w==='all'?'All Weeks (month avg)':'Week '+w;$('fWeek').appendChild(x);});
+  buildMemberMS();buildMonthMS();
+}
+function colorFor(v){if(v==null)return '#c0c4cc';if(v>=-20)return '#55A868';if(v>=-75)return '#DD8452';return '#C44E52';}
+function avgMonths(m,months){const vs=months.map(mo=>m.monthly[mo]).filter(v=>v!=null);return vs.length?+(vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(2):null;}
+function scoreFor(m){const sm=singleMonth(),wk=$('fWeek').value;
+  if(sm&&wk!=='all')return m.weekly[sm]?m.weekly[sm][wk]:null;
+  return avgMonths(m,effMonths());}
+
+function render(){
+  const sm=singleMonth();
+  $('fWeek').disabled=!sm;if(!sm)$('fWeek').value='all';
+  const wk=$('fWeek').value,sort=$('fSort').value;
+  let list=activeMembers().map(m=>({...m,score:scoreFor(m)}));
+  if(sort==='alpha')list.sort((a,b)=>a.name.localeCompare(b.name));
+  else list.sort((a,b)=>{const av=a.score==null?-1e9:a.score,bv=b.score==null?-1e9:b.score;return sort==='best'?bv-av:av-bv;});
+  const valid=list.filter(m=>m.score!=null);
+  const avg=valid.length?valid.reduce((s,m)=>s+m.score,0)/valid.length:null;
+  const best=valid.length?valid.reduce((a,b)=>a.score>b.score?a:b):null;
+  const worst=valid.length?valid.reduce((a,b)=>a.score<b.score?a:b):null;
+  const perLbl=selMo.size===0?'Full Year':(sm?(wk==='all'?sm:sm+' Wk'+wk):selMo.size+' months');
+  const lbl=$('fYear').value+' '+perLbl;
+  $('kpis').innerHTML=`
+   <div class="kpi"><div class="l">Members Shown</div><div class="v">${list.length}</div><div class="s">${lbl}</div></div>
+   <div class="kpi" style="border-color:#4C72B0"><div class="l">Group Avg Score</div><div class="v ${cls(avg)}">${fmt(avg)}</div><div class="s">mean of shown members</div></div>
+   <div class="kpi" style="border-color:#55A868"><div class="l">Top Performer</div><div class="v zero" style="font-size:20px">${best?best.name:'&mdash;'}</div><div class="s">${best?fmt(best.score):''}</div></div>
+   <div class="kpi" style="border-color:#C44E52"><div class="l">Needs Attention</div><div class="v neg" style="font-size:20px">${worst?worst.name:'&mdash;'}</div><div class="s">${worst?fmt(worst.score):''}</div></div>`;
+  $('barTitle').textContent='Average Score by Member — '+lbl;
+  drawBar('bars',list.map(m=>m.name),list.map(m=>m.score));
+  drawTrend(list);
+  const rl=activeMembers().slice().sort((a,b)=>b.yearly-a.yearly);
+  drawRank(rl.map(m=>m.name),rl.map(m=>m.yearly));
+  buildTable(list);
+}
+function drawBar(id,labels,vals){if(charts[id])charts[id].destroy();
+  charts[id]=new Chart($(id),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:vals.map(colorFor),borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:labels.length>9?'y':'x',
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>(c.raw==null?'No data':c.raw.toFixed(1)+'%')}}},
+    scales:{x:{ticks:{callback:v=>v+'%'},grid:{display:false}},y:{ticks:{callback:v=>typeof v==='number'?v+'%':v}}}}});}
+function drawTrend(list){const id='trend';if(charts[id])charts[id].destroy();
+  const sm=singleMonth(),yr=$('fYear').value;
+  const months=effMonths();
+  let labels,datasets,title;
+  if(sm){ // weekly within single month
+    labels=WKS.map(w=>'Wk'+w);
+    if(selMem.size===0&&$('fRole').value==='all'){
+      const data=WKS.map(w=>{const vs=MEM.map(m=>m.weekly[sm]?m.weekly[sm][w]:null).filter(v=>v!=null);return vs.length?+(vs.reduce((a,b)=>a+b,0)/vs.length).toFixed(2):null;});
+      datasets=[{label:'Team',data,borderColor:'#4C72B0',backgroundColor:'#4C72B033',fill:true,tension:.3,pointRadius:4,spanGaps:true}];
+      title='Weekly Trend — Team, '+sm+' '+yr;
+    }else{datasets=list.slice(0,12).map((m,i)=>({label:m.name,data:WKS.map(w=>m.weekly[sm]?m.weekly[sm][w]:null),borderColor:PAL[i%PAL.length],fill:false,tension:.3,pointRadius:3,spanGaps:true,borderWidth:2}));
+      title='Weekly Comparison — '+sm+' '+yr;}
+  }else{ // monthly across selected (or all) months
+    labels=months;
+    if(selMem.size===0&&$('fRole').value==='all'){
+      datasets=[{label:'Team avg',data:months.map(x=>TAVG[x]),borderColor:'#4C72B0',backgroundColor:'#4C72B033',fill:true,tension:.3,pointRadius:4,spanGaps:true}];
+      title='Monthly Trend — Team Average '+yr;
+    }else{datasets=list.slice(0,12).map((m,i)=>({label:m.name,data:months.map(x=>m.monthly[x]),borderColor:PAL[i%PAL.length],fill:false,tension:.3,pointRadius:3,spanGaps:true,borderWidth:2}));
+      title='Monthly Comparison — '+(selMem.size||list.length)+' member(s) '+yr;}
+  }
+  $('trendTitle').textContent=title;
+  charts[id]=new Chart($(id),{type:'line',data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:datasets.length>1,position:'top',labels:{usePointStyle:true,boxWidth:8,font:{size:11}}},
+      tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.raw==null?'No data':c.raw.toFixed(1)+'%')}}},
+    scales:{y:{ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}});}
+function drawRank(labels,vals){const id='rank';if(charts[id])charts[id].destroy();
+  charts[id]=new Chart($(id),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:vals.map(colorFor),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
+    scales:{x:{ticks:{callback:v=>v+'%'}},y:{ticks:{font:{size:10}}}}}});}
+function buildTable(list){const thead=$('tbl').querySelector('thead'),tb=$('tbl').querySelector('tbody');const sm=singleMonth(),yr=$('fYear').value;const months=effMonths();
+  if(sm){$('tblTitle').textContent='Weekly Detail — '+sm+' '+yr;
+    thead.innerHTML='<tr><th>Member</th><th>Role</th>'+WKS.map(w=>`<th>Wk ${w}</th>`).join('')+'<th>Month Avg</th></tr>';
+    tb.innerHTML=list.map(m=>{const cells=WKS.map(w=>{const v=m.weekly[sm]?m.weekly[sm][w]:null;return `<td class="${cls(v)}">${fmt(v)}</td>`;}).join('');
+      return `<tr><td><b>${m.name}</b></td><td><span class="pill">${m.role}</span></td>${cells}<td class="${cls(m.monthly[sm])}"><b>${fmt(m.monthly[sm])}</b></td></tr>`;}).join('');
+  }else{const avgHdr=selMo.size===0?'Yearly':'Avg';$('tblTitle').textContent='Detail Table — '+(selMo.size===0?'Monthly + Yearly':selMo.size+' months')+' '+yr;
+    thead.innerHTML='<tr><th>Member</th><th>Role</th>'+months.map(m=>`<th>${m}</th>`).join('')+`<th>${avgHdr}</th></tr>`;
+    tb.innerHTML=list.map(m=>{const cells=months.map(x=>{const v=m.monthly[x];return `<td class="${cls(v)}">${fmt(v)}</td>`;}).join('');
+      const tail=selMo.size===0?m.yearly:avgMonths(m,months);
+      return `<tr><td><b>${m.name}</b></td><td><span class="pill">${m.role}</span></td>${cells}<td class="${cls(tail)}"><b>${fmt(tail)}</b></td></tr>`;}).join('');}}
+$('fYear').addEventListener('change',()=>{setYear();rebuildFilters();render();});
+['fRole','fWeek','fSort'].forEach(id=>$(id).addEventListener('change',render));
+setYear();rebuildFilters();render();
+</script></body></html>
