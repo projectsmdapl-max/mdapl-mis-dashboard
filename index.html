@@ -75,8 +75,6 @@ footer{font-size:12px;color:var(--sec);text-align:center;padding:14px}
 <div class="kpis" id="kpis"></div>
 <div class="charts">
 <div class="card full"><h3 id="trendTitle">Weekly Trend</h3><div class="chartbox tall"><canvas id="trend"></canvas></div></div>
-<div class="card"><h3>Team Ranking (Yearly Avg)</h3><div class="chartbox"><canvas id="rank"></canvas></div></div>
-<div class="card"><h3 id="barTitle">Average Score by Member</h3><div class="chartbox"><canvas id="bars"></canvas></div></div>
 </div>
 <div class="card tablecard"><h3 id="tblTitle">Detail Table</h3><table id="tbl"><thead></thead><tbody></tbody></table></div>
 <footer>Generated <span id="gen"></span> &middot; MDAPL MIS</footer>
@@ -156,11 +154,7 @@ function render(){
    <div class="kpi" style="border-color:#4C72B0"><div class="l">Group Avg Score</div><div class="v ${cls(avg)}">${fmt(avg)}</div><div class="s">mean of shown members</div></div>
    <div class="kpi" style="border-color:#55A868"><div class="l">Top Performer</div><div class="v zero" style="font-size:20px">${best?best.name:'&mdash;'}</div><div class="s">${best?fmt(best.score):''}</div></div>
    <div class="kpi" style="border-color:#C44E52"><div class="l">Needs Attention</div><div class="v neg" style="font-size:20px">${worst?worst.name:'&mdash;'}</div><div class="s">${worst?fmt(worst.score):''}</div></div>`;
-  $('barTitle').textContent='Average Score by Member — '+lbl;
-  drawBar('bars',list.map(m=>m.name),list.map(m=>m.score));
   drawTrend();
-  const rl=activeMembers().slice().sort((a,b)=>b.yearly-a.yearly);
-  drawRank(rl.map(m=>m.name),rl.map(m=>m.yearly));
   buildTable(list);
 }
 function drawBar(id,labels,vals){if(charts[id])charts[id].destroy();
