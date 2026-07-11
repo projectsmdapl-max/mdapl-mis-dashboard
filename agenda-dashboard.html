@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MDAPL Next Agenda Tracker</title>
+<style>
+:root{color-scheme:light;--ink:#1e2233;--muted:#7a829a;--line:#e7e9f1;--brand:#4c1d95;--brand2:#9d174d;--bg:#f4f5fa;--card:#ffffff}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",-apple-system,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(120deg,#11162b 0%,#3b1d6e 50%,#7a1e49 100%);color:#fff;padding:24px 28px;position:relative;overflow:hidden}
+header:after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;background:radial-gradient(circle,rgba(255,255,255,.10),transparent 70%)}
+header h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.4px}
+header .sub{font-size:12.5px;opacity:.85;margin-top:6px}
+.wrap{padding:22px 28px;max-width:1560px;margin:0 auto}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px}
+.kpi{position:relative;border-radius:16px;padding:16px 18px;color:#fff;overflow:hidden;box-shadow:0 8px 20px rgba(20,24,45,.16)}
+.kpi .n{font-size:27px;font-weight:800;line-height:1}
+.kpi .l{font-size:11px;opacity:.95;text-transform:uppercase;letter-spacing:.7px;margin-top:7px}
+.k0{background:linear-gradient(135deg,#4338ca,#7c3aed)}.k1{background:linear-gradient(135deg,#9d174d,#db2777)}
+.k2{background:linear-gradient(135deg,#9a3412,#ea580c)}.k3{background:linear-gradient(135deg,#065f46,#0f766e)}.k4{background:linear-gradient(135deg,#075985,#2563eb)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 6px 18px rgba(20,24,45,.06)}
+.filters{padding:18px;margin-bottom:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.filters label{font-size:10.5px;color:var(--brand);font-weight:800;text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px}
+.filters select,.filters input{width:100%;padding:9px 11px;border:1.5px solid #e3e0f0;border-radius:10px;font-size:13px;background:#faf9fe;color:var(--ink)}
+.filters select:focus,.filters input:focus{outline:none;border-color:#8b5cf6;background:#fff;box-shadow:0 0 0 3px rgba(139,92,246,.12)}
+.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px}
+.chartcard{padding:16px}
+.chartcard h3{margin:0 0 12px;font-size:11.5px;color:var(--brand2);text-transform:uppercase;letter-spacing:.6px;font-weight:800}
+.chartbox{position:relative;height:190px}
+.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;flex-wrap:wrap}
+.count{font-size:13px;color:var(--brand);font-weight:800}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{background:linear-gradient(135deg,#4c1d95,#9d174d);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 11px rgba(76,29,149,.26)}
+.btn.sec{background:#fff;color:var(--brand);border:1.5px solid #cdbef2;box-shadow:none}
+.btn.upd{background:linear-gradient(135deg,#047857,#0f766e)}
+.btn:disabled{opacity:.6;cursor:default}
+.btn.status{background:#eef0f6;color:#5b6478;box-shadow:none;font-weight:600;opacity:1!important;cursor:default}
+.note{font-size:12px;color:var(--brand);background:#f3effc;border:1px solid #ddd2f6;border-radius:10px;padding:10px 13px;margin-bottom:14px;display:none}
+table{width:100%;border-collapse:collapse;overflow:hidden;font-size:13px}
+.tablewrap{overflow:hidden}
+th,td{text-align:left;padding:11px 13px;border-bottom:1px solid #eef0f6;vertical-align:top}
+th{background:linear-gradient(135deg,#2b2150,#5b2a86);font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:#fff;cursor:pointer;white-space:nowrap;position:sticky;top:0;font-weight:700}
+th:hover{filter:brightness(1.12)}
+tbody tr:nth-child(odd) td{background:#faf9fe}
+tbody tr:hover td{background:#f0ecfb}
+.tag{display:inline-block;background:#e6ecff;color:#3730a3;border-radius:7px;padding:2px 9px;font-size:11px;margin:1px 3px 1px 0;white-space:nowrap;font-weight:600}
+.tag.sp{background:#fde7f1;color:#9d174d}
+.badge{display:inline-block;border-radius:20px;padding:3px 11px;font-size:11px;font-weight:800;white-space:nowrap}
+.badge.open{background:#fef3c7;color:#92400e}
+.badge.done{background:#d1fae5;color:#065f46}
+.code{font-weight:800;color:#ea580c;font-size:13px}
+.msg{max-width:540px;line-height:1.45}
+.foot{font-size:11px;color:var(--muted);margin-top:16px;line-height:1.6}
+@media(max-width:820px){.charts{grid-template-columns:1fr}}
+#gate{position:fixed;inset:0;background:linear-gradient(135deg,#11162b,#3b1d6e,#7a1e49);display:flex;align-items:center;justify-content:center;z-index:9999}
+#gate .box{background:#fff;padding:30px 28px;border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.5);width:310px;text-align:center}
+#gate h2{margin:0 0 4px;font-size:18px;color:var(--brand)}
+#gate p{margin:0 0 16px;font-size:12px;color:var(--muted)}
+#gate input{width:100%;padding:11px;border:1.5px solid #e3e0f0;border-radius:10px;font-size:15px;text-align:center;letter-spacing:2px}
+#gate button{width:100%;padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,#4c1d95,#9d174d);color:#fff;font-weight:800;cursor:pointer;margin-top:12px}
+#gate .err{color:#be185d;font-size:12px;min-height:14px;margin-top:9px}
+</style></head>
+<body>
+<div id="gate"><div class="box"><h2>&#128274; Next Agenda</h2><p>Enter the passcode to view this dashboard</p><input id="gpw" type="password" inputmode="numeric" placeholder="Passcode" autofocus><button id="gbtn">Unlock</button><div class="err" id="gerr"></div></div></div>
+<header><h1>MDAPL &middot; Next Agenda</h1><div class="sub">Live &ldquo;Next AGENDA :&rdquo; log from the Telegram project groups &middot; updated 2026-07-11</div></header>
+<div class="wrap">
+<div class="note" id="note"></div>
+<div class="kpis" id="kpis"></div>
+<div class="filters panel">
+<div><label>Project / Group</label><select id="f_group"></select></div>
+<div><label>Status</label><select id="f_status"></select></div>
+<div><label>Floor</label><select id="f_floor"></select></div>
+<div><label>Space</label><select id="f_space"></select></div>
+<div><label>Date from</label><input type="date" id="f_from"></div>
+<div><label>Date to</label><input type="date" id="f_to"></div>
+<div><label>Search text</label><input type="text" id="f_q" placeholder="keyword..."></div>
+</div>
+<div class="charts">
+<div class="chartcard panel"><h3>REQ by Project</h3><div class="chartbox"><canvas id="chProj"></canvas></div></div>
+<div class="chartcard panel"><h3>REQ over time</h3><div class="chartbox"><canvas id="chMonth"></canvas></div></div>
+<div class="chartcard panel"><h3>REQ by Floor</h3><div class="chartbox"><canvas id="chFloor"></canvas></div></div>
+<div class="chartcard panel"><h3>Top Spaces</h3><div class="chartbox"><canvas id="chSpace"></canvas></div></div>
+</div>
+<div class="bar"><div class="count" id="count"></div>
+<div class="actions"><span id="lastupd" class="btn status"></span><button class="btn upd" id="upd">&#8635; Run Now</button><button class="btn sec" id="reset">Reset</button><button class="btn" id="csv">Export CSV</button></div></div>
+<div class="tablewrap panel"><table id="tbl"><thead><tr>
+<th data-k="project_code">Code</th><th data-k="project">Project</th><th data-k="city">City</th>
+<th data-k="floor">Floor</th><th data-k="space">Space</th><th data-k="status">Status</th><th data-k="date_iso">Date</th><th data-k="text">REQ / Requirement</th>
+</tr></thead><tbody></tbody></table></div>
+<div class="foot">Source: messages beginning with &ldquo;Next AGENDA :&rdquo; scraped from the Telegram project groups. Dates DD-Mmm-YYYY. Auto-refreshed weekly by the scheduled task (Saturdays 10:30 AM IST). Long messages may show a truncated preview.</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const DATA = [{"project_code": "767", "group": "767 - SHRUTI JI RES (KRISHANJI) AGRAWAL RES JPR -AK(PD)/SN/SV/SS/TK/AA/UD/AH/KK", "project": "SHRUTI JI RES (KRISHANJI) AGRAWAL RES JPR -AK(PD)/SN/SV/SS/TK/AA/UD/AH/KK", "city": "Jaipur", "folder": "Telegram (Next AGENDA)", "date": "07-Jul-2026", "date_iso": "2026-07-07", "floor": ["Unspecified"], "space": ["Bathroom / Toilet", "Plumbing / Drainage"], "text": "Next AGENDA : 1. All drain pipes connection pending to drains. They are wrong. Check! 2. All bathroom sunken to be checked for conduit drainage. Below pipes water flow to be clear. 3. Need video of...", "status": "Open", "has_image": false, "sender": "Ar. Rohit K Nagia"}];
+const GATE_PW="209";
+const TASK_ID="req-tracker-update";
+const GEN="2026-07-11";
+const PALETTE=["#7c3aed","#db2777","#ea580c","#0f766e","#2563eb","#9d174d","#a855f7","#0891b2","#ca8a04","#4338ca","#15803d","#e11d48"];
+let sortK="date_iso",sortDir=-1,charts={};
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const uniq=a=>[...new Set(a)].sort();
+function gateOK(){document.getElementById("gate").style.display="none";setTimeout(()=>{Object.values(charts).forEach(c=>c&&c.resize&&c.resize());},60);}
+function gateTry(){if(document.getElementById("gpw").value===GATE_PW){try{sessionStorage.setItem("req_ok","1")}catch(e){}gateOK();}else{document.getElementById("gerr").textContent="Incorrect passcode";}}
+function fillSel(id,vals,all){const s=document.getElementById(id);s.innerHTML="<option value=''>"+all+"</option>"+vals.map(v=>`<option>${v}</option>`).join("");}
+function initFilters(){fillSel("f_group",uniq(DATA.map(r=>r.project_code+" - "+r.project.slice(0,28))),"All projects");fillSel("f_status",["Open","Done"],"All statuses");fillSel("f_floor",uniq(DATA.flatMap(r=>r.floor)),"All floors");fillSel("f_space",uniq(DATA.flatMap(r=>r.space)),"All spaces");}
+function getF(){return{group:f_group.value,status:f_status.value,floor:f_floor.value,space:f_space.value,from:f_from.value,to:f_to.value,q:f_q.value.trim().toLowerCase()};}
+function apply(){const f=getF();let rows=DATA.filter(r=>{
+ if(f.group&&(r.project_code+" - "+r.project.slice(0,28))!==f.group)return false;
+ if(f.floor&&!r.floor.includes(f.floor))return false;
+ if(f.status&&r.status!==f.status)return false;
+ if(f.space&&!r.space.includes(f.space))return false;
+ if(f.from&&r.date_iso&&r.date_iso<f.from)return false;
+ if(f.to&&r.date_iso&&r.date_iso>f.to)return false;
+ if(f.q&&!(r.text.toLowerCase().includes(f.q)||r.project.toLowerCase().includes(f.q)))return false;
+ return true;});
+ rows.sort((a,b)=>{let x=Array.isArray(a[sortK])?a[sortK].join():a[sortK]||"";let y=Array.isArray(b[sortK])?b[sortK].join():b[sortK]||"";return x<y?-sortDir:x>y?sortDir:0;});
+ render(rows);}
+function render(rows){document.getElementById("count").textContent=rows.length+" of "+DATA.length+" requirements";
+ document.querySelector("#tbl tbody").innerHTML=rows.map(r=>`<tr><td class="code">${r.project_code}</td><td>${esc(r.project)}</td><td>${esc(r.city)}</td><td>${r.floor.map(x=>`<span class='tag'>${esc(x)}</span>`).join("")}</td><td>${r.space.map(x=>`<span class='tag sp'>${esc(x)}</span>`).join("")}</td><td>${badge(r.status)}</td><td>${esc(r.date)}</td><td class="msg">${esc(r.text)}</td></tr>`).join("");
+ kpis(rows);drawCharts(rows);}
+function badge(s){const k=(s||"Open").toLowerCase()==="done"?"done":"open";return `<span class="badge ${k}">${esc(s||"Open")}</span>`;}
+function esc(s){return(s==null?"":(""+s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function kpis(rows){const g=new Set(rows.map(r=>r.project_code));const op=rows.filter(r=>r.status==="Open").length;const dn=rows.length-op;const ds=rows.map(r=>r.date_iso).filter(Boolean).sort();
+ document.getElementById("kpis").innerHTML=kpi(rows.length,"Total Agenda",0)+kpi(op,"Open",1)+kpi(dn,"Done",3)+kpi(g.size,"Projects",4)+kpi(fmt(ds[ds.length-1]),"Latest",2);}
+function fmt(iso){if(!iso)return"-";const[y,m]=iso.split("-");return MON[(+m)-1]+" "+y;}
+function kpi(n,l,i){return `<div class="kpi k${i}"><div class="n">${n}</div><div class="l">${l}</div></div>`;}
+function cnt(rows,keyfn){const o={};rows.forEach(r=>{const v=keyfn(r);(Array.isArray(v)?v:[v]).forEach(x=>o[x]=(o[x]||0)+1);});return o;}
+function drawCharts(rows){
+ bar("chProj",cnt(rows,r=>r.project_code),false);
+ const mc=cnt(rows,r=>r.date_iso?r.date_iso.slice(0,7):null);delete mc["null"];line("chMonth",mc);
+ doughnut("chFloor",cnt(rows,r=>r.floor));
+ const sp=cnt(rows,r=>r.space);delete sp["Unspecified"];bar("chSpace",topN(sp,7),true);
+}
+function topN(o,n){return Object.fromEntries(Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,n));}
+function mk(id,cfg){if(typeof Chart==="undefined")return;if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
+function bar(id,o,horiz){const e=Object.entries(o).sort((a,b)=>b[1]-a[1]);mk(id,{type:"bar",data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),backgroundColor:e.map((_,i)=>PALETTE[i%PALETTE.length]),borderRadius:6}]},options:{indexAxis:horiz?"y":"x",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{precision:0}},y:{ticks:{precision:0}}}}});}
+function line(id,o){const e=Object.entries(o).sort((a,b)=>a[0]<b[0]?-1:1);mk(id,{type:"line",data:{labels:e.map(x=>fmt(x[0]+"-01")),datasets:[{data:e.map(x=>x[1]),borderColor:"#7c3aed",backgroundColor:"rgba(124,58,237,.15)",fill:true,tension:.3,pointBackgroundColor:"#9d174d"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});}
+function doughnut(id,o){const e=Object.entries(o).sort((a,b)=>b[1]-a[1]);mk(id,{type:"doughnut",data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),backgroundColor:e.map((_,i)=>PALETTE[i%PALETTE.length])}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"right",labels:{boxWidth:11,font:{size:10}}}}}});}
+function toCSV(){const rows=[...document.querySelectorAll("#tbl tbody tr")];let out=[["Code","Project","City","Floor","Space","Status","Date","Message"]];rows.forEach(tr=>{out.push([...tr.children].map(td=>td.innerText.replace(/\s+/g," ").trim()));});const csv=out.map(r=>r.map(v=>'"'+(v||"").replace(/"/g,'""')+'"').join(",")).join(String.fromCharCode(10));const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);a.download="REQ_filtered.csv";a.click();}
+function showNote(m){const n=document.getElementById("note");n.style.display="block";n.textContent=m;}
+function fmtDMY(iso){if(!iso||iso.indexOf("-")<0)return iso;const p=iso.split("-");return p[2]+"-"+MON[(+p[1])-1]+"-"+p[0];}
+function setupAction(){const btn=document.getElementById("upd");const lu=document.getElementById("lastupd");if(lu)lu.innerHTML="Updated "+fmtDMY(GEN);const inCowork=!!(window.cowork&&window.cowork.runScheduledTask);btn.onclick=inCowork?updateNow:publicRun;btn.title=inCowork?"Run the weekly rebuild now":"Auto-updates weekly (Sat 10 AM IST). Click to reload the latest published data; open in Claude for a full on-demand rebuild.";}
+function publicRun(){showNote("This dashboard rebuilds automatically every day at 6:00 PM (and on demand from Claude). Reloading the latest published version...");setTimeout(function(){location.reload();},1000);}
+async function updateNow(){const btn=document.getElementById("upd");btn.disabled=true;const o=btn.innerHTML;btn.innerHTML="Updating...";try{await window.cowork.runScheduledTask(TASK_ID);showNote("Update started - the scraper runs in the background (a few minutes). Use Reload at the top of this view once it finishes.");btn.innerHTML="Update started";}catch(e){showNote("Could not start update: "+e);btn.disabled=false;btn.innerHTML=o;}}
+document.querySelectorAll("th").forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(sortK===k)sortDir*=-1;else{sortK=k;sortDir=1;}apply();});
+["f_group","f_status","f_floor","f_space","f_from","f_to","f_q"].forEach(id=>document.getElementById(id).addEventListener("input",apply));
+document.getElementById("reset").onclick=()=>{["f_group","f_status","f_floor","f_space","f_from","f_to","f_q"].forEach(id=>document.getElementById(id).value="");apply();};
+document.getElementById("csv").onclick=toCSV;setupAction();
+document.getElementById("gbtn").onclick=gateTry;document.getElementById("gpw").addEventListener("keydown",e=>{if(e.key==="Enter")gateTry();});
+try{if(sessionStorage.getItem("req_ok")==="1")gateOK();}catch(e){}
+initFilters();apply();
+</script></body></html>
