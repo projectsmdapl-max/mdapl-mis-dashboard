@@ -74,16 +74,16 @@ tbody tr:hover td{background:#f0ecfb}
 <div><label>Search text</label><input type="text" id="f_q" placeholder="keyword..."></div>
 </div>
 <div class="charts">
-<div class="chartcard panel"><h3>REQ by Project</h3><div class="chartbox"><canvas id="chProj"></canvas></div></div>
-<div class="chartcard panel"><h3>REQ over time</h3><div class="chartbox"><canvas id="chMonth"></canvas></div></div>
-<div class="chartcard panel"><h3>REQ by Floor</h3><div class="chartbox"><canvas id="chFloor"></canvas></div></div>
+<div class="chartcard panel"><h3>Agenda by Project</h3><div class="chartbox"><canvas id="chProj"></canvas></div></div>
+<div class="chartcard panel"><h3>Agenda over time</h3><div class="chartbox"><canvas id="chMonth"></canvas></div></div>
+<div class="chartcard panel"><h3>Agenda by Floor</h3><div class="chartbox"><canvas id="chFloor"></canvas></div></div>
 <div class="chartcard panel"><h3>Top Spaces</h3><div class="chartbox"><canvas id="chSpace"></canvas></div></div>
 </div>
 <div class="bar"><div class="count" id="count"></div>
 <div class="actions"><span id="lastupd" class="btn status"></span><button class="btn upd" id="upd">&#8635; Run Now</button><button class="btn sec" id="reset">Reset</button><button class="btn" id="csv">Export CSV</button></div></div>
 <div class="tablewrap panel"><table id="tbl"><thead><tr>
 <th data-k="project_code">Code</th><th data-k="project">Project</th><th data-k="city">City</th>
-<th data-k="floor">Floor</th><th data-k="space">Space</th><th data-k="status">Status</th><th data-k="date_iso">Date</th><th data-k="text">REQ / Requirement</th>
+<th data-k="floor">Floor</th><th data-k="space">Space</th><th data-k="status">Status</th><th data-k="date_iso">Date</th><th data-k="text">Agenda Item</th>
 </tr></thead><tbody></tbody></table></div>
 <div class="foot">Source: messages beginning with &ldquo;Next AGENDA :&rdquo; scraped from the Telegram project groups. Dates DD-Mmm-YYYY. Auto-refreshed weekly by the scheduled task (Saturdays 10:30 AM IST). Long messages may show a truncated preview.</div>
 </div>
@@ -134,7 +134,7 @@ function mk(id,cfg){if(typeof Chart==="undefined")return;if(charts[id])charts[id
 function bar(id,o,horiz){const e=Object.entries(o).sort((a,b)=>b[1]-a[1]);mk(id,{type:"bar",data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),backgroundColor:e.map((_,i)=>PALETTE[i%PALETTE.length]),borderRadius:6}]},options:{indexAxis:horiz?"y":"x",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{precision:0}},y:{ticks:{precision:0}}}}});}
 function line(id,o){const e=Object.entries(o).sort((a,b)=>a[0]<b[0]?-1:1);mk(id,{type:"line",data:{labels:e.map(x=>fmt(x[0]+"-01")),datasets:[{data:e.map(x=>x[1]),borderColor:"#7c3aed",backgroundColor:"rgba(124,58,237,.15)",fill:true,tension:.3,pointBackgroundColor:"#9d174d"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});}
 function doughnut(id,o){const e=Object.entries(o).sort((a,b)=>b[1]-a[1]);mk(id,{type:"doughnut",data:{labels:e.map(x=>x[0]),datasets:[{data:e.map(x=>x[1]),backgroundColor:e.map((_,i)=>PALETTE[i%PALETTE.length])}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"right",labels:{boxWidth:11,font:{size:10}}}}}});}
-function toCSV(){const rows=[...document.querySelectorAll("#tbl tbody tr")];let out=[["Code","Project","City","Floor","Space","Status","Date","Message"]];rows.forEach(tr=>{out.push([...tr.children].map(td=>td.innerText.replace(/\s+/g," ").trim()));});const csv=out.map(r=>r.map(v=>'"'+(v||"").replace(/"/g,'""')+'"').join(",")).join(String.fromCharCode(10));const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);a.download="REQ_filtered.csv";a.click();}
+function toCSV(){const rows=[...document.querySelectorAll("#tbl tbody tr")];let out=[["Code","Project","City","Floor","Space","Status","Date","Message"]];rows.forEach(tr=>{out.push([...tr.children].map(td=>td.innerText.replace(/\s+/g," ").trim()));});const csv=out.map(r=>r.map(v=>'"'+(v||"").replace(/"/g,'""')+'"').join(",")).join(String.fromCharCode(10));const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);a.download="NextAgenda_filtered.csv";a.click();}
 function showNote(m){const n=document.getElementById("note");n.style.display="block";n.textContent=m;}
 function fmtDMY(iso){if(!iso||iso.indexOf("-")<0)return iso;const p=iso.split("-");return p[2]+"-"+MON[(+p[1])-1]+"-"+p[0];}
 function setupAction(){const btn=document.getElementById("upd");const lu=document.getElementById("lastupd");if(lu)lu.innerHTML="Updated "+fmtDMY(GEN);const inCowork=!!(window.cowork&&window.cowork.runScheduledTask);btn.onclick=inCowork?updateNow:publicRun;btn.title=inCowork?"Run the weekly rebuild now":"Auto-updates weekly (Sat 10 AM IST). Click to reload the latest published data; open in Claude for a full on-demand rebuild.";}
