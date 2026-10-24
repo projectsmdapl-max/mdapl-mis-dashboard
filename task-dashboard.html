@@ -313,6 +313,45 @@ async function boot(){
   setup(); render();
 }
 boot();
+/* auto-refresh: re-fetch live CSV every 2 min and on tab focus; keeps filters */
+(function () {
+  var REFRESH_MS = 2 * 60 * 1000;
+  var busy = false, lastOk = null, fails = 0;
+  function stamp(d) { return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+  async function refresh() {
+    if (busy || !LIVE_CSV_URL || LIVE_CSV_URL.indexOf('http') !== 0) return;
+    busy = true;
+    try {
+      var sep = LIVE_CSV_URL.indexOf('?') > -1 ? '&' : '?';
+      var res = await fetch(LIVE_CSV_URL + sep + '_=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var recs = fromCSV(await res.text());
+      if (!recs.length) throw new Error('empty feed');
+      var keep = [fProj.value, fPerson.value, fCat.value, fStatus.value, fSearch.value];
+      DATA = recs;
+      setup();
+      [fProj, fPerson, fCat, fStatus].forEach(function (s, i) {
+        if ([].some.call(s.options, function (o) { return o.value === keep[i]; })) s.value = keep[i];
+      });
+      fSearch.value = keep[4];
+      render();
+      lastOk = new Date(); fails = 0;
+      document.getElementById('dot').classList.remove('snap');
+      document.getElementById('liveTxt').textContent = 'Live · updated ' + stamp(lastOk);
+    } catch (e) {
+      fails++;
+      console.warn('auto-refresh failed', e);
+      if (fails >= 2 && lastOk) {
+        document.getElementById('dot').classList.add('snap');
+        document.getElementById('liveTxt').textContent = 'Stale · last updated ' + stamp(lastOk);
+      }
+    }
+    busy = false;
+  }
+  window.__refreshDashboard = refresh;
+  setInterval(refresh, REFRESH_MS);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
+})();
 </script>
 </body>
 </html>
